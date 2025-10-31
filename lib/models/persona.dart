@@ -1,51 +1,30 @@
-// lib/models/persona.dart
+import '../utils/id_utils.dart';
 
+/// Representa una persona o estudiante registrada en la base de datos.
+/// Guarda el identificador NFC normalizado, nombre y grupo.
 class Persona {
   final String id;
-  String nombre;
-  String dni;
-  String rol;
-  String estado;
-  DateTime creadoEn;
+  final String nombre;
+  final String grupo;
 
   Persona({
-    required this.id,
+    required String id,
     required this.nombre,
-    required this.dni,
-    required this.rol,
-    required this.estado,
-    DateTime? creadoEn,
-  }) : creadoEn = creadoEn ?? DateTime.now();
+    required this.grupo,
+  }) : id = normalizeId(id);
 
-  /// Serialización JSON simple
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'nombre': nombre,
-    'dni': dni,
-    'rol': rol,
-    'estado': estado,
-    'creadoEn': creadoEn.toIso8601String(),
-  };
-
-  factory Persona.fromJson(Map<String, dynamic> m) {
-    DateTime creado;
-    try {
-      creado = DateTime.parse(m['creadoEn']?.toString() ?? DateTime.now().toIso8601String());
-    } catch (_) {
-      creado = DateTime.now();
-    }
+  factory Persona.fromMap(Map<String, dynamic> m) {
+    final rawId = m['id']?.toString() ?? '';
     return Persona(
-      id: m['id']?.toString() ?? '',
+      id: normalizeId(rawId),
       nombre: m['nombre']?.toString() ?? '',
-      dni: m['dni']?.toString() ?? '',
-      rol: m['rol']?.toString() ?? '',
-      estado: m['estado']?.toString() ?? '',
-      creadoEn: creado,
+      grupo: m['grupo']?.toString() ?? '',
     );
   }
 
-  @override
-  String toString() {
-    return 'Persona(id: $id, nombre: $nombre, dni: $dni, rol: $rol, estado: $estado, creadoEn: $creadoEn)';
-  }
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'nombre': nombre,
+    'grupo': grupo,
+  };
 }

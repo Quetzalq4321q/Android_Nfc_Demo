@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/nfc_service.dart';
 import 'services/persona_service.dart';
+import 'services/log_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,7 @@ class MyApp extends StatelessWidget {
       providers: [
         Provider(create: (_) => PersonaService()),
         Provider(create: (_) => NfcService()),
+        Provider(create: (_) => LogService()),
       ],
       child: MaterialApp(
         title: 'NFC Proyecto',
@@ -48,47 +50,54 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
     Center(child: Text('Historial')),
   ];
 
-  // 🔹 Esta es la función funcional de lectura NFC
-  Future<void> _comprobarNfcYMostrar() async {
-    final nfc = context.read<NfcService>();
+  /// Función que realiza el proceso de lectura, validación y registro de logs
+  Future<void> _comprobarNfcYRegistrar() async {
+    final nfcService = context.read<NfcService>();
     final personaService = context.read<PersonaService>();
+    final logService = context.read<LogService>();
 
-    final available = await nfc.isNfcAvailableAndEnabled();
+    final disponible = await nfcService.isNfcAvailableAndEnabled();
     if (!mounted) return;
-    if (!available) {
+    if (!disponible) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('NFC no disponible o desactivado')),
       );
+      await logService.insertLog('SIN_DISPONIBILIDAD', 'NFC desactivado');
       return;
     }
 
     try {
-      final id = await nfc.readNfc();
+      final id = await nfcService.readNfc();
       if (!mounted) return;
-      if (id == null) {
+
+      if (id == null || id.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No se detectó ID en la etiqueta')),
         );
+        await logService.insertLog('SIN_ID', 'Etiqueta sin ID');
         return;
       }
 
-      final persona = await personaService.findById(id);
-      if (!mounted) return;
+      final persona = await personaService.getPersonaById(id);
 
       if (persona != null) {
+        final mensaje = 'Encontrado: ${persona.nombre} • ${persona.grupo}';
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Encontrado: ${persona.nombre} • ${persona.rol}')),
+          SnackBar(content: Text(mensaje)),
         );
+        await logService.insertLog(id, 'Verificación correcta');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('ID no registrada: $id')),
         );
+        await logService.insertLog(id, 'ID no registrada');
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al leer NFC: $e')),
       );
+      await logService.insertLog('ERROR', 'Error al leer NFC: $e');
     }
   }
 
@@ -96,14 +105,14 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NFC Proyecto — Demo'),
+        title: const Text('NFC Proyecto'),
         centerTitle: true,
         actions: [
           IconButton(
             tooltip: 'Comprobar NFC',
             icon: const Icon(Icons.nfc),
-            onPressed: _comprobarNfcYMostrar,
-          )
+            onPressed: _comprobarNfcYRegistrar,
+          ),
         ],
       ),
       body: _demoPages[_currentIndex],
@@ -120,7 +129,7 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.play_arrow),
         label: const Text('Probar lectura NFC'),
-        onPressed: _comprobarNfcYMostrar,
+        onPressed: _comprobarNfcYRegistrar,
       ),
     );
   }

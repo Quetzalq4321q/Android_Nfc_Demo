@@ -1,89 +1,70 @@
 // lib/database_service/db_service.dart
-import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
   factory DBService() => _instance;
   DBService._internal();
 
-  Future<File> _localFile() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = '${dir.path}/personas.json';
-    final file = File(path);
-    if (!await file.exists()) {
-      // crear archivo con un mapa vacío
-      await file.writeAsString(jsonEncode({}), flush: true);
-    }
-    return file;
+  static Database? _db;
+
+  Future<Database> get db async {
+    if (_db != null) return _db!;
+    _db = await _initDB();
+    return _db!;
   }
 
-  /// Guarda/actualiza una persona serializada (mapa). Key = id
-  Future<void> savePersonaMap(String id, Map<String, dynamic> personaMap) async {
-    final file = await _localFile();
-    final content = await file.readAsString();
-    Map<String, dynamic> data;
-    try {
-      data = jsonDecode(content) as Map<String, dynamic>;
-    } catch (_) {
-      data = {};
-    }
-    data[id] = personaMap;
-    await file.writeAsString(jsonEncode(data), flush: true);
+  Future<Database> _initDB() async {
+    final databasesPath = await getDatabasesPath();
+    final path = join(databasesPath, 'nfc_proyecto.db');
+
+    return await openDatabase(
+      path,
+      version: 2, // Versión por la nueva tabla logs
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
   }
 
-  /// Lee una persona por id, retorna el mapa o null
-  Future<Map<String, dynamic>?> readPersonaMap(String id) async {
-    final file = await _localFile();
-    final content = await file.readAsString();
-    Map<String, dynamic> data;
-    try {
-      data = jsonDecode(content) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
-    final entry = data[id];
-    if (entry == null) return null;
-    return Map<String, dynamic>.from(entry);
+  Future<void> _onCreate(Database db, int version) async {
+    // Tabla persona
+    await db.execute('''
+      CREATE TABLE persona(
+        id TEXT PRIMARY KEY,
+        nombre TEXT,
+        grupo TEXT
+      )
+    ''');
+
+    // Tabla logs
+    await db.execute('''
+      CREATE TABLE logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tag_id TEXT,
+        fecha TEXT,
+        resultado TEXT
+      )
+    ''');
   }
 
-  /// Devuelve todas las personas como Map<id, map>
-  Future<Map<String, dynamic>> readAllAsMap() async {
-    final file = await _localFile();
-    final content = await file.readAsString();
-    try {
-      final data = jsonDecode(content) as Map<String, dynamic>;
-      return data;
-    } catch (_) {
-      return {};
+  /// Maneja actualizaciones del esquema de BD
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE logs(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          tag_id TEXT,
+          fecha TEXT,
+          resultado TEXT
+        )
+      ''');
     }
   }
 
-  /// Borra una persona por id. Retorna true si existía y fue borrada.
-  Future<bool> deleteById(String id) async {
-    final file = await _localFile();
-    final content = await file.readAsString();
-    Map<String, dynamic> data;
-    try {
-      data = jsonDecode(content) as Map<String, dynamic>;
-    } catch (_) {
-      return false;
-    }
-    if (!data.containsKey(id)) return false;
-    data.remove(id);
-    await file.writeAsString(jsonEncode(data), flush: true);
-    return true;
-  }
-
-  /// Exporta el JSON a un archivo nuevo y devuelve la ruta (útil para compartir)
-  Future<String> exportJson({String? fileName}) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final exportName = fileName ?? 'personas_export_${DateTime.now().millisecondsSinceEpoch}.json';
-    final exportPath = '${dir.path}/$exportName';
-    final data = await readAllAsMap();
-    final f = File(exportPath);
-    await f.writeAsString(jsonEncode(data), flush: true);
-    return exportPath;
+  Future<void> close() async {
+    final database = await db;
+    await database.close();
+    _db = null;
   }
 }

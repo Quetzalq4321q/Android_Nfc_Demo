@@ -1,29 +1,45 @@
-import 'package:uuid/uuid.dart';
+// services/persona_service.dart
+import 'package:sqflite/sqflite.dart';
+import '../database_service/db_service.dart';
 import '../models/persona.dart';
 
 class PersonaService {
-  final _uuid = const Uuid();
-  final List<Persona> _personas = [];
+  final DBService _dbService = DBService();
 
-  Future<Persona> createPersonaDemo() async {
-    final persona = Persona(
-      id: _uuid.v4(),
-      nombre: 'Alumno ${_personas.length + 1}',
-      dni: '00000000',
-      rol: 'Alumno',
-      estado: 'activo',
+  Future<Persona?> getPersonaById(String id) async {
+    final db = await _dbService.db;
+    final maps = await db.query(
+      'persona',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
     );
-    _personas.add(persona);
-    return persona;
+    if (maps.isEmpty) return null;
+    return Persona.fromMap(maps.first);
   }
 
-  Future<Persona?> findById(String id) async {
-    try {
-      return _personas.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return null;
-    }
+  Future<bool> hasPersonaById(String id) async {
+    final p = await getPersonaById(id);
+    return p != null;
   }
 
-  Future<List<Persona>> allPersonas() async => _personas;
+  Future<void> insertOrReplacePersona(Persona persona) async {
+    final db = await _dbService.db;
+    await db.insert(
+      'persona',
+      persona.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Persona>> allPersonas() async {
+    final db = await _dbService.db;
+    final result = await db.query('persona');
+    return result.map((m) => Persona.fromMap(m)).toList();
+  }
+
+  Future<void> deletePersona(String id) async {
+    final db = await _dbService.db;
+    await db.delete('persona', where: 'id = ?', whereArgs: [id]);
+  }
 }
