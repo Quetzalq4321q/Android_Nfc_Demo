@@ -6,6 +6,7 @@ import 'services/nfc_service.dart';
 import 'services/persona_service.dart';
 import 'ui/check_status_page.dart';
 import 'ui/logs_page.dart';
+import 'ui/personas_page.dart';
 import 'ui/nfc_reader_page.dart';
 import 'ui/write_nfc_page.dart';
 
@@ -69,6 +70,7 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
     super.initState();
     _pages = const [
       NfcReaderPage(),
+      PersonasPage(),
       WriteNfcPage(),
       CheckStatusPage(),
       LogsPage(),
@@ -129,6 +131,7 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.nfc), label: 'Leer'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Personas'),
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Escribir'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Comprobar'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historial'),
