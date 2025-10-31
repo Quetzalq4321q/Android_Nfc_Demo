@@ -1,0 +1,23 @@
+[
+  {
+    "id": "04A224C3D67280",
+    "nombre": "Gabriel Pajuelo",
+    "dni": "74235109",
+    "fecha_nacimiento": "2007-05-24",
+    "tipo": "alumno"
+  },
+  {
+    "id": "0481B6A12F91A1",
+    "nombre": "Juan Pérez",
+    "dni": "73124567",
+    "fecha_nacimiento": "2006-09-15",
+    "tipo": "alumno"
+  },
+  {
+    "id": "04B3D8F912A331",
+    "nombre": "Invitado desconocido",
+    "dni": "00000000",
+    "fecha_nacimiento": "",
+    "tipo": "no_alumno"
+  }
+]

@@ -1,0 +1,41 @@
+name: nfc_proyecto
+description: "App para leer NFC y verificar estudiantes"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.5
+  path_provider: ^2.0.14
+  csv: ^5.0.0
+  flutter_nfc_kit: ^3.6.0
+  ndef: ^0.3.4
+
+  nfc_manager: any
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/logo.png"
+
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/data/estudiantes.json
+    - assets/icon/logo.png
+
+
+
+
