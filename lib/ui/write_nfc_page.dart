@@ -1,6 +1,7 @@
 // ui/write_nfc_page.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/nfc_provider.dart';
 
 class WriteNfcPage extends StatefulWidget {
@@ -17,7 +18,7 @@ class _WriteNfcPageState extends State<WriteNfcPage> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = Provider.of<NfcProvider>(context);
+    final prov = context.watch<NfcProvider>();
     return Scaffold(
       appBar: AppBar(title: const Text('Escribir NFC / Registrar')),
       body: Padding(
@@ -39,7 +40,7 @@ class _WriteNfcPageState extends State<WriteNfcPage> {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID y Nombre son obligatorios')));
                   return;
                 }
-                prov.writeAndSave(id, nombre, grupo, onError: (err) {
+                context.read<NfcProvider>().writeAndSave(id, nombre, grupo, onError: (err) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $err')));
                 }, onSuccess: () {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Escrito y guardado en DB')));

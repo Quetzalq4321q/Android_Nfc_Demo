@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'providers/nfc_provider.dart';
+import 'services/log_service.dart';
 import 'services/nfc_service.dart';
 import 'services/persona_service.dart';
-import 'services/log_service.dart';
+import 'ui/check_status_page.dart';
+import 'ui/nfc_reader_page.dart';
+import 'ui/write_nfc_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +23,7 @@ class MyApp extends StatelessWidget {
         Provider(create: (_) => PersonaService()),
         Provider(create: (_) => NfcService()),
         Provider(create: (_) => LogService()),
+        ChangeNotifierProvider(create: (_) => NfcProvider()),
       ],
       child: MaterialApp(
         title: 'NFC Proyecto',
@@ -27,6 +32,11 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         ),
+        routes: {
+          '/read': (context) => const NfcReaderPage(),
+          '/write': (context) => const WriteNfcPage(),
+          '/check': (context) => const CheckStatusPage(),
+        },
         home: const HomeScreenWrapper(),
       ),
     );
@@ -44,9 +54,9 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
   int _currentIndex = 0;
 
   static const List<Widget> _demoPages = <Widget>[
-    Center(child: Text('Leer NFC')),
-    Center(child: Text('Escribir NFC')),
-    Center(child: Text('Comprobar estado')),
+    NfcReaderPage(),
+    WriteNfcPage(),
+    CheckStatusPage(),
     Center(child: Text('Historial')),
   ];
 
