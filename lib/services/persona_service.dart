@@ -1,45 +1,40 @@
-// services/persona_service.dart
-import 'package:sqflite/sqflite.dart';
-import '../database_service/db_service.dart';
+// lib/services/persona_service.dart
+import 'dart:convert';
 import '../models/persona.dart';
+import 'persona_repository.dart';
 
 class PersonaService {
-  final DBService _dbService = DBService();
+  final PersonaRepository _repo;
 
-  Future<Persona?> getPersonaById(String id) async {
-    final db = await _dbService.db;
-    final maps = await db.query(
-      'persona',
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    if (maps.isEmpty) return null;
-    return Persona.fromMap(maps.first);
+  PersonaService({PersonaRepository? repo}) : _repo = repo ?? PersonaRepository();
+
+  /// Mantiene compatibilidad con NfcProvider.startRead()
+  Future<Persona?> getPersonaById(String id) {
+    return _repo.findById(id);
   }
 
-  Future<bool> hasPersonaById(String id) async {
-    final p = await getPersonaById(id);
-    return p != null;
+  /// Mantiene compatibilidad con NfcProvider.writeAndSave()
+  Future<void> insertOrReplacePersona(Persona p) {
+    return _repo.upsert(p);
   }
 
-  Future<void> insertOrReplacePersona(Persona persona) async {
-    final db = await _dbService.db;
-    await db.insert(
-      'persona',
-      persona.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  /// Extra helpers (por si los necesitas en tus páginas)
+  Future<List<Persona>> getAllPersonas() => _repo.listAll();
 
-  Future<List<Persona>> allPersonas() async {
-    final db = await _dbService.db;
-    final result = await db.query('persona');
-    return result.map((m) => Persona.fromMap(m)).toList();
-  }
-
-  Future<void> deletePersona(String id) async {
-    final db = await _dbService.db;
-    await db.delete('persona', where: 'id = ?', whereArgs: [id]);
+  /// Importa una lista JSON como la que compartiste
+  Future<void> importFromJson(String jsonText) async {
+    final List<dynamic> data = json.decode(jsonText) as List<dynamic>;
+    for (final raw in data) {
+      final m = raw as Map<String, dynamic>;
+      final p = Persona(
+        id: m['id'] as String,
+        nombre: (m['nombre'] ?? '') as String,
+        grupo: m['grupo'] as String?, // compat v2
+        dni: m['dni'] as String?,
+        fechaNacimiento: m['fecha_nacimiento'] as String?,
+        tipo: m['tipo'] as String?,
+      );
+      await _repo.upsert(p);
+    }
   }
 }

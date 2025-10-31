@@ -1,4 +1,3 @@
-// lib/database_service/db_service.dart
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -18,17 +17,15 @@ class DBService {
   Future<Database> _initDB() async {
     final databasesPath = await getDatabasesPath();
     final path = join(databasesPath, 'nfc_proyecto.db');
-
     return await openDatabase(
       path,
-      version: 2, // Versión por la nueva tabla logs
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // Tabla persona
     await db.execute('''
       CREATE TABLE persona(
         id TEXT PRIMARY KEY,
@@ -36,8 +33,6 @@ class DBService {
         grupo TEXT
       )
     ''');
-
-    // Tabla logs
     await db.execute('''
       CREATE TABLE logs(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,7 +43,6 @@ class DBService {
     ''');
   }
 
-  /// Maneja actualizaciones del esquema de BD
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
