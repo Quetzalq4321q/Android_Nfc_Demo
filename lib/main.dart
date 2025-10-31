@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'services/nfc_service.dart';
 import 'services/persona_service.dart';
 import 'services/log_service.dart';
+import 'ui/logs_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,11 +44,11 @@ class HomeScreenWrapper extends StatefulWidget {
 class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
   int _currentIndex = 0;
 
-  static const List<Widget> _demoPages = <Widget>[
-    Center(child: Text('Leer NFC')),
-    Center(child: Text('Escribir NFC')),
-    Center(child: Text('Comprobar estado')),
-    Center(child: Text('Historial')),
+  static final List<Widget> _demoPages = <Widget>[
+    const Center(child: Text('Leer NFC')),
+    const Center(child: Text('Escribir NFC')),
+    const Center(child: Text('Comprobar estado')),
+    const LogsPage(),
   ];
 
   /// Función que realiza el proceso de lectura, validación y registro de logs
