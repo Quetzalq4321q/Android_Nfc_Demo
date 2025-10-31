@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'services/nfc_service.dart';
 import 'services/persona_service.dart';
 import 'services/log_service.dart';
+import 'ui/personas_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,13 +43,19 @@ class HomeScreenWrapper extends StatefulWidget {
 
 class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
   int _currentIndex = 0;
+  late final List<Widget> _pages;
 
-  static const List<Widget> _demoPages = <Widget>[
-    Center(child: Text('Leer NFC')),
-    Center(child: Text('Escribir NFC')),
-    Center(child: Text('Comprobar estado')),
-    Center(child: Text('Historial')),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = const [
+      PersonasPage(),
+      Center(child: Text('Leer NFC')),
+      Center(child: Text('Escribir NFC')),
+      Center(child: Text('Comprobar estado')),
+      Center(child: Text('Historial')),
+    ];
+  }
 
   /// Función que realiza el proceso de lectura, validación y registro de logs
   Future<void> _comprobarNfcYRegistrar() async {
@@ -115,22 +122,25 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
           ),
         ],
       ),
-      body: _demoPages[_currentIndex],
+      body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Personas'),
           BottomNavigationBarItem(icon: Icon(Icons.nfc), label: 'Leer'),
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: 'Escribir'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Comprobar'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historial'),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.play_arrow),
-        label: const Text('Probar lectura NFC'),
-        onPressed: _comprobarNfcYRegistrar,
-      ),
+      floatingActionButton: _currentIndex == 0
+          ? null
+          : FloatingActionButton.extended(
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Probar lectura NFC'),
+              onPressed: _comprobarNfcYRegistrar,
+            ),
     );
   }
 }
