@@ -9,19 +9,26 @@ import 'ui/logs_page.dart';
 import 'ui/nfc_reader_page.dart';
 import 'ui/write_nfc_page.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  final personaService = PersonaService();
+  await personaService.seedDatabaseIfEmptyFromAsset();
+  runApp(MyApp(personaService: personaService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    super.key,
+    required this.personaService,
+  });
+
+  final PersonaService personaService;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider(create: (_) => PersonaService()),
+        Provider.value(value: personaService),
         Provider(create: (_) => NfcService()),
         Provider(create: (_) => LogService()),
         ChangeNotifierProvider(
@@ -55,6 +62,7 @@ class HomeScreenWrapper extends StatefulWidget {
 class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
   int _currentIndex = 0;
   late final List<Widget> _pages;
+  bool _seedStatusChecked = false;
 
   @override
   void initState() {
@@ -65,6 +73,25 @@ class _HomeScreenWrapperState extends State<HomeScreenWrapper> {
       CheckStatusPage(),
       LogsPage(),
     ];
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_seedStatusChecked) return;
+    _seedStatusChecked = true;
+    final personaService = context.read<PersonaService>();
+    final error = personaService.lastSeedError;
+    if (error != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      });
+    }
   }
 
   /// Solicita al proveedor que ejecute el flujo de lectura y registre el log

@@ -1,5 +1,9 @@
 // services/persona_service.dart
+import 'dart:convert';
 import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'package:sqflite/sqflite.dart';
 import '../database_service/db_service.dart';
@@ -8,6 +12,79 @@ import '../utils/csv_helper.dart';
 
 class PersonaService {
   final DBService _dbService = DBService();
+  String? lastSeedError;
+
+  /// Carga los registros iniciales desde [assetPath] cuando la tabla `persona`
+  /// está vacía. Devuelve la cantidad de filas insertadas o `-1` si ocurrió un
+  /// error.
+  Future<int> seedDatabaseIfEmptyFromAsset({
+    String assetPath = 'assets/data/estudiantes.json',
+  }) async {
+    lastSeedError = null;
+    try {
+      final db = await _dbService.db;
+      final countResult = Sqflite.firstIntValue(
+        await db.rawQuery('SELECT COUNT(*) FROM persona'),
+      );
+      if ((countResult ?? 0) > 0) {
+        return 0;
+      }
+
+      final jsonString = await rootBundle.loadString(assetPath);
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! List) {
+        throw const FormatException(
+          'El archivo de semilla debe ser una lista de objetos JSON.',
+        );
+      }
+
+      final personas = decoded
+          .whereType<Map<String, dynamic>>()
+          .map((map) {
+            final rawGroup = map['grupo'];
+            final normalizedGroup = rawGroup != null &&
+                    rawGroup.toString().trim().isNotEmpty
+                ? rawGroup.toString()
+                : map['tipo']?.toString() ?? map['dni']?.toString() ?? '';
+            return Persona(
+              id: map['id']?.toString() ?? '',
+              nombre: map['nombre']?.toString() ?? '',
+              grupo: normalizedGroup,
+            );
+          })
+          .where((persona) => persona.id.isNotEmpty)
+          .toList();
+
+      if (personas.isEmpty) {
+        debugPrint(
+          'No se insertaron datos de semilla porque el archivo no contenía IDs válidos.',
+        );
+        return 0;
+      }
+
+      await db.transaction((txn) async {
+        final batch = txn.batch();
+        for (final persona in personas) {
+          batch.insert(
+            'persona',
+            persona.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+        await batch.commit(noResult: true);
+      });
+
+      debugPrint(
+        'Se cargaron ${personas.length} registros iniciales desde $assetPath.',
+      );
+      return personas.length;
+    } catch (e, stackTrace) {
+      lastSeedError = 'No se pudo cargar la semilla inicial: $e';
+      debugPrint(lastSeedError);
+      debugPrint(stackTrace.toString());
+      return -1;
+    }
+  }
 
   Future<Persona?> getPersonaById(String id) async {
     final db = await _dbService.db;
