@@ -5,41 +5,31 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('NEXID'),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+    Widget btn(String text, String route) => SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => Navigator.pushNamed(context, route),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Text(text),
+        ),
       ),
-      body: Center(
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('NFC Proyecto')),
+      body: SafeArea(
+        minimum: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Bienvenido a NEXID',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.people),
-              label: const Text('Ver Personas Registradas'),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Navegar a personas...')),
-                );
-              },
-            ),
-            const SizedBox(height: 15),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.nfc),
-              label: const Text('Leer NFC'),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Función NFC próximamente...')),
-                );
-              },
-            ),
+            btn('Leer NFC', '/read'),
+            const SizedBox(height: 12),
+            btn('Escribir NFC', '/write'),
+            const SizedBox(height: 12),
+            btn('Ver Logs', '/logs'),
+            const SizedBox(height: 12),
+            btn('Comprobar acceso (leer + log)', '/check'),
           ],
         ),
       ),

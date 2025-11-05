@@ -1,29 +1,40 @@
-import 'package:uuid/uuid.dart';
+// lib/services/persona_service.dart
+import 'dart:convert';
 import '../models/persona.dart';
+import 'persona_repository.dart';
 
 class PersonaService {
-  final _uuid = const Uuid();
-  final List<Persona> _personas = [];
+  final PersonaRepository _repo;
 
-  Future<Persona> createPersonaDemo() async {
-    final persona = Persona(
-      id: _uuid.v4(),
-      nombre: 'Alumno ${_personas.length + 1}',
-      dni: '00000000',
-      rol: 'Alumno',
-      estado: 'activo',
-    );
-    _personas.add(persona);
-    return persona;
+  PersonaService({PersonaRepository? repo}) : _repo = repo ?? PersonaRepository();
+
+  /// Mantiene compatibilidad con NfcProvider.startRead()
+  Future<Persona?> getPersonaById(String id) {
+    return _repo.findById(id);
   }
 
-  Future<Persona?> findById(String id) async {
-    try {
-      return _personas.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return null;
+  /// Mantiene compatibilidad con NfcProvider.writeAndSave()
+  Future<void> insertOrReplacePersona(Persona p) {
+    return _repo.upsert(p);
+  }
+
+  /// Extra helpers (por si los necesitas en tus páginas)
+  Future<List<Persona>> getAllPersonas() => _repo.listAll();
+
+  /// Importa una lista JSON como la que compartiste
+  Future<void> importFromJson(String jsonText) async {
+    final List<dynamic> data = json.decode(jsonText) as List<dynamic>;
+    for (final raw in data) {
+      final m = raw as Map<String, dynamic>;
+      final p = Persona(
+        id: m['id'] as String,
+        nombre: (m['nombre'] ?? '') as String,
+        grupo: m['grupo'] as String?, // compat v2
+        dni: m['dni'] as String?,
+        fechaNacimiento: m['fecha_nacimiento'] as String?,
+        tipo: m['tipo'] as String?,
+      );
+      await _repo.upsert(p);
     }
   }
-
-  Future<List<Persona>> allPersonas() async => _personas;
 }

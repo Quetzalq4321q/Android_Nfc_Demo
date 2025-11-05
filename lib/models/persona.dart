@@ -1,51 +1,42 @@
-// lib/models/persona.dart
-
 class Persona {
-  final String id;
-  String nombre;
-  String dni;
-  String rol;
-  String estado;
-  DateTime creadoEn;
+  final String id;               // Tag ID o ID lógico (lo que lees/escribes)
+  final String nombre;
+  final String? grupo;           // compat v2
+  final String? dni;             // si migras a v3
+  final String? fechaNacimiento; // si migras a v3 ("YYYY-MM-DD")
+  final String? tipo;            // si migras a v3 ("alumno"/"no_alumno")
 
   Persona({
     required this.id,
     required this.nombre,
-    required this.dni,
-    required this.rol,
-    required this.estado,
-    DateTime? creadoEn,
-  }) : creadoEn = creadoEn ?? DateTime.now();
+    this.grupo,
+    this.dni,
+    this.fechaNacimiento,
+    this.tipo,
+  });
 
-  /// Serialización JSON simple
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'id': id,
     'nombre': nombre,
+    'grupo': grupo,
     'dni': dni,
-    'rol': rol,
-    'estado': estado,
-    'creadoEn': creadoEn.toIso8601String(),
-  };
+    'fecha_nacimiento': fechaNacimiento,
+    'tipo': tipo,
+  }..removeWhere((k, v) => v == null);
 
-  factory Persona.fromJson(Map<String, dynamic> m) {
-    DateTime creado;
-    try {
-      creado = DateTime.parse(m['creadoEn']?.toString() ?? DateTime.now().toIso8601String());
-    } catch (_) {
-      creado = DateTime.now();
-    }
-    return Persona(
-      id: m['id']?.toString() ?? '',
-      nombre: m['nombre']?.toString() ?? '',
-      dni: m['dni']?.toString() ?? '',
-      rol: m['rol']?.toString() ?? '',
-      estado: m['estado']?.toString() ?? '',
-      creadoEn: creado,
-    );
-  }
+  factory Persona.fromMap(Map<String, dynamic> map) => Persona(
+    id: map['id'] as String,
+    nombre: (map['nombre'] ?? '') as String,
+    grupo: map['grupo'] as String?,
+    dni: map['dni'] as String?,
+    fechaNacimiento: map['fecha_nacimiento'] as String?,
+    tipo: map['tipo'] as String?,
+  );
 
-  @override
-  String toString() {
-    return 'Persona(id: $id, nombre: $nombre, dni: $dni, rol: $rol, estado: $estado, creadoEn: $creadoEn)';
+  /// True si (tipo == alumno) o (grupo == alumno) para compatibilidad con v2.
+  bool get esAlumno {
+    final t = (tipo ?? '').toLowerCase();
+    final g = (grupo ?? '').toLowerCase();
+    return t == 'alumno' || g == 'alumno';
   }
 }
